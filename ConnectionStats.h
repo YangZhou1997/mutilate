@@ -124,7 +124,7 @@ class ConnectionStats {
 
   static void print_header() {
     printf("%-7s %7s %7s %7s %7s %7s %7s %7s %7s\n",
-           "#type", "avg", "std", "min", /*"1st",*/ "5th", "10th",
+           "#type", "50th", "min", "1st", "5th", "10th",
            "90th", "95th", "99th");
   }
 
@@ -165,7 +165,7 @@ class ConnectionStats {
     sort(copy.begin(), copy.end());
 
     printf("%-7s %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f",
-           tag, std::accumulate(copy.begin(), copy.end(), 0.0) / l,
+           tag, copy[(l*50) / 100],
            copy[0], copy[(l*1) / 100], copy[(l*5) / 100], copy[(l*10) / 100],
            copy[(l*90) / 100], copy[(l*95) / 100], copy[(l*99) / 100]
            );
@@ -182,7 +182,7 @@ class ConnectionStats {
     }
 
     printf("%-7s %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f",
-           tag, sampler.average(),
+           tag, sampler.get_nth(50),
            sampler.get_nth(0), sampler.get_nth(1), sampler.get_nth(5),
            sampler.get_nth(10), sampler.get_nth(90),
            sampler.get_nth(95), sampler.get_nth(99));
@@ -200,8 +200,8 @@ class ConnectionStats {
     }
 
     printf("%-7s %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f %7.1f",
-           tag, sampler.average(), sampler.stddev(),
-           sampler.get_nth(0), /*sampler.get_nth(1),*/ sampler.get_nth(5),
+           tag, sampler.get_nth(50),
+           sampler.get_nth(0), sampler.get_nth(1), sampler.get_nth(5),
            sampler.get_nth(10), sampler.get_nth(90),
            sampler.get_nth(95), sampler.get_nth(99));
 

@@ -573,7 +573,8 @@ int main(int argc, char **argv) {
 
       go(servers, options, stats);
 
-      stats.print_stats("read", stats.get_sampler, false);
+      stats.print_stats("read", stats.get_sampler, true);
+      stats.print_stats("update", stats.set_sampler, false);
       printf(" %8.1f", stats.get_qps());
       printf(" %8d\n", q);
     }    

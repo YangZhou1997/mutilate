@@ -55,10 +55,20 @@ int main(int argc, char **argv) {
   KeyGenerator kg(g);
   */
 
-  Generator *g = createFacebookValue();
-  //  Generator *g = createGenerator("pareto:15,214.476,0.348238");
-  for (int i = 0; i < 1000000; i++)
-    printf("%f\n", g->generate());
+//   Generator *g = createFacebookValue();
+//   //  Generator *g = createGenerator("pareto:15,214.476,0.348238");
+//   for (int i = 0; i < 1000000; i++)
+    // printf("%f\n", g->generate());
+
+	Generator *g_key = createFacebookKey();
+	Generator *g_val = createFacebookValue();
+	Generator *g_ia = createFacebookIA(); // in us (microsecond)
+	FILE *f = fopen("/users/yangzhou/traces/Facebook_ETC_1M.trace", "w");
+	for(int i = 0; i < 10000000; i++){
+		fprintf(f, "%d %d %lf\n", (int)(g_key->generate()), (int)(g_val->generate()), g_ia->generate());
+	}
+	fflush(f);
+	fclose(f);
 
   /*
   Generator *p2 = createGenerator("p:214.476,0.348238");

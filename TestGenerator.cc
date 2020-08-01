@@ -60,15 +60,32 @@ int main(int argc, char **argv) {
 //   for (int i = 0; i < 1000000; i++)
     // printf("%f\n", g->generate());
 
-	Generator *g_key = createFacebookKey();
-	Generator *g_val = createFacebookValue();
+#define KEYSPACE 1000000
+	
+	
+	Generator *g_k = createFacebookKey();
+	KeyGenerator *g_key = new KeyGenerator(g_k, KEYSPACE, 0.99);
+	Generator *g_v = createFacebookValue();
+	ValueGenerator *g_val = new ValueGenerator(g_v);
 	Generator *g_ia = createFacebookIA(); // in us (microsecond)
 	FILE *f = fopen("/users/yangzhou/traces/Facebook_ETC_1M.trace", "w");
-	for(int i = 0; i < 10000000; i++){
-		fprintf(f, "%d %d %lf\n", (int)(g_key->generate()), (int)(g_val->generate()), g_ia->generate());
+	
+	// warmup keys from [0, KEYSPACE); 
+	for(int i = 0; i < KEYSPACE; i++){
+		std::string key = g_key->generate(i);
+		std::string value = g_val->generate();
+		fprintf(f, "%s %s %lf\n", key.c_str(), value.c_str(), g_ia->generate());
+	}
+
+	// generating real workloads;
+	for(int i = 0; i < KEYSPACE/10; i++){
+		std::string key = g_key->generate_zipf();
+		std::string value = g_val->generate();
+		fprintf(f, "%s %s %lf\n", key.c_str(), value.c_str(), g_ia->generate());
 	}
 	fflush(f);
 	fclose(f);
+
 
   /*
   Generator *p2 = createGenerator("p:214.476,0.348238");

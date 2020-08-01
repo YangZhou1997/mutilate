@@ -9,7 +9,7 @@
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-#include "config.h"
+// #include "config.h"
 
 #include <string>
 #include <vector>
@@ -189,9 +189,47 @@ private:
   std::vector< std::pair<double,double> > pv;
 };
 
+// generate zipf integer given range_n and skew (theta)
+class ZipfGen{
+    uint64_t range_n;
+    double alpha, zetan, eta, skew;
+    double zeta(uint64_t n, double theta){
+        double ret = 0;
+        for (uint64_t i = 0; i < n; i++){
+            ret += pow(1.0 / (double) (i + 1), theta);
+        }
+        return ret;
+    }
+public: 
+    ZipfGen(uint64_t n, double theta){
+        range_n = n;
+        skew = theta;
+        alpha = 1 / (1 - theta);
+        zetan = zeta(n, theta);
+        eta = (1 - pow(2.0 / n, 1 - theta)) / (1 - zeta(2, theta) / zetan);
+    }
+    // return [0 , range_n - 1)
+    uint64_t zipf_next(){
+        double u = rand() * 1.0 / RAND_MAX;
+        double uz = u * zetan;
+        uint64_t val;
+        if (uz < 1) 
+            val = 1;
+        else if (uz < 1 + pow(0.5, skew)) 
+            val = 2;
+        else
+            val = 1 + (uint64_t)(range_n * pow(eta*u - eta + 1.0, alpha));
+        val--;
+        return val % range_n; 
+    }
+};
+
 class KeyGenerator {
 public:
-  KeyGenerator(Generator* _g, double _max = 10000) : g(_g), max(_max) {}
+  KeyGenerator(Generator* _g, double _max=10000, double _skew=0.99) : g(_g), max(_max), skew(_skew) {
+      ig = new ZipfGen(_max, _skew);
+  }
+// ind will determine both key and key len; 
   std::string generate(uint64_t ind) {
     uint64_t h = fnv_64(ind);
     double U = (double) h / ULLONG_MAX;
@@ -203,9 +241,50 @@ public:
     //    D("%d = %s", ind, key);
     return std::string(key);
   }
+  std::string generate_zipf() {
+      uint64_t ind = ig->zipf_next();
+      return generate(ind);
+  }
 private:
   Generator* g;
+  ZipfGen* ig;
   double max;
+  double skew;
+};
+
+class ValueGenerator {
+public:
+  ValueGenerator(Generator* _g) : g(_g) {
+      init_random_stuff();
+  }
+// mimicing Connection::issue_something;
+  std::string generate() {
+    double G = g->generate();
+    int valuelen = round(G);
+    int index = lrand48() % (1024 * 1024);
+    memcpy(value, &random_char[index], valuelen);
+
+    //    D("%d = %s", ind, key);
+    return std::string(value, valuelen);
+  }
+  void init_random_stuff() {
+	static char lorem[] =
+	R"(Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas turpis dui, suscipit non vehicula non, malesuada id sem. Phasellus suscipit nisl ut dui consectetur ultrices tincidunt eros aliquet. Donec feugiat lectus sed nibh ultrices ultrices. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris suscipit eros sed justo lobortis at ultrices lacus molestie. Duis in diam mi. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Ut cursus viverra sagittis. Vivamus non facilisis tortor. Integer lectus arcu, sagittis et eleifend rutrum, condimentum eget sem. Vestibulum tempus tellus non risus semper semper. Morbi molestie rhoncus mi, in egestas dui facilisis et.)";
+
+	size_t cursor = 0;
+	while (cursor < sizeof(random_char)) {
+		size_t max = sizeof(lorem);
+		if (sizeof(random_char) - cursor < max)
+			max = sizeof(random_char) - cursor;
+
+		memcpy(&random_char[cursor], lorem, max);
+		cursor += max;
+	}
+   }
+private:
+    Generator* g;
+    char random_char[2 * 1024 * 1024];  // Buffer used to generate random values.
+    char value[1024 * 1024];
 };
 
 Generator* createGenerator(std::string str);

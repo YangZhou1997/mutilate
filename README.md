@@ -20,8 +20,27 @@ out compatibility over time.
 Building
 ========
 
-    apt-get install scons libevent-dev gengetopt libzmq-dev
+    apt-get install scons libevent-dev gengetopt libzmq3-dev
     scons
+
+Stress Testing
+========
+```
+git clone git@github.com:YangZhou1997/mutilate.git && cd mutilate && git checkout latencyOutput
+
+# Arachne uses 20 agent client nodes (16 threads) and 1 master client nodes (8 thread). 
+# In each agent node: 32 agent client threads.
+ulimit -n 4096 # solve “epoll_create: Too many open files” error
+./mutilate -T 32 -A
+
+# in the master node: 
+./mutilate -s node-4:5001 --loadonly
+
+# in the master node: 8 master client threads, 1 connection per master client thread, 1000 qps total for master client; 
+# it also specify 4 connections per agent client threads, the target aggregated qps 400000, using 1M records and 3% of updates; 
+# running 10 sec
+./mutilate -s node-4:5000 --noload -B -T 8 -Q 1000 -C 1 -c 4 -a node-8 -a node-9 -a node-10 -a node-11 -a node-12 -q 4000000 -K fb_key -V fb_key -i fb_ia -r 1000000 -u 0.03 -t 10
+```
 
 Basic Usage
 ===========

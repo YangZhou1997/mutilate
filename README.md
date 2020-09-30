@@ -31,6 +31,10 @@ git clone git@github.com:YangZhou1997/mutilate.git && cd mutilate && git checkou
 # Arachne uses 20 agent client nodes (16 threads) and 1 master client nodes (8 thread). 
 # In each agent node: 32 agent client threads.
 ulimit -n 4096 # solve “epoll_create: Too many open files” error
+# if not working as ulimit can only change the SFOT limit, try the following: 
+echo "yangzhou hard nofile 40960" | sudo tee -a /etc/security/limits.conf
+# re-login. 
+ssh localhost -l yangzhou
 ./mutilate -T 32 -A
 
 # in the master node: 
